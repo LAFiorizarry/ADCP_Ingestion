@@ -70,17 +70,9 @@ def write_aquadopp_ascii_pufff(directory, filename, station_name, station_id,
             puff_file.write("{}\n".format(ports_name))
             puff_file.write("ZZZ0001 {} - {}\n\n".
                             format(station_id, station_name))
-            puff_file.write("{:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {} {} {}\n".
-                            format(header_array[n][2],  # year
-                                   header_array[n][0],  # month
-                                   header_array[n][1],  # day
-                                   header_array[n][3],  # hour
-                                   header_array[n][4],  # min
-                                   num_cells,           # num of current bins
-                                   DQA,                 # DQA
-                                   DQAC))               # DQCC
-            puff_file.write("{:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f} "
-                            "{:.0f} {:.0f} {:.0f} {:.0f} {:.0f} {:.0f}\n".
+            puff_file.write("{:6.0f} {:6.0f} {:6.0f} {:6.0f} {:6.0f} {:6.0f} "
+                            "{:6.0f} {:6.0f} {:6.0f} {:6.0f} {:6.0f} {:10.0f} "
+                            "{:10.0f}\n".
                             format(header_array[n][10]*10,   # heading *10
                                    header_array[n][11]*10,   # pitch *10
                                    header_array[n][12]*10,   # roll *10
@@ -94,6 +86,16 @@ def write_aquadopp_ascii_pufff(directory, filename, station_name, station_id,
                                    header_array[n][9]*10,    # sound speed *10
                                    -999,  # pressure sensor offset
                                    -999))  # pressure sensor scale
+            puff_file.write("{:5.0f} {:02.0f} {:02.0f} {:02.0f} {:02.0f} {} "
+                            "{} {}\n".
+                            format(header_array[n][2],  # year
+                                   header_array[n][0],  # month
+                                   header_array[n][1],  # day
+                                   header_array[n][3],  # hour
+                                   header_array[n][4],  # min
+                                   num_cells,           # num of current bins
+                                   DQA,                 # DQA
+                                   DQAC))               # DQCC
             new_array = np.zeros(shape=(num_cells, 14))
             new_array[:, 0] = range(num_cells+1)[1:]
             new_array[:, 1] = v1_array[n, :]*1000
@@ -112,4 +114,5 @@ def write_aquadopp_ascii_pufff(directory, filename, station_name, station_id,
             new_array[:, 11] = std_beam3_array[n, :]  # should be -999
             new_array[:, 12] = water_temp_array[n, :]  # should be -999
             new_array[:, 13] = DQA_array[n, :]
-            np.savetxt(puff_file, new_array, fmt='%-6.0f')
+            current_format = '%4.0f' + 12*' %6.0f' + ' %032.0f'
+            np.savetxt(puff_file, new_array, fmt=current_format)
