@@ -10,37 +10,38 @@ AWACAST to puff. Later modules will convert raw binary to ascii first.
 """
 import sys
 # from awac_wpr_ascii import awac_wpr_ascii
-from awac_ascii_pufff import write_awac_ascii_pufff
+from adcp_ingestion_code.aquadopp_awac_ascii_pufff import write_aquadopp_ascii_pufff
 
 
 def awac_conversion():
     """ converts input awac file"""
-    directory = input("Full directory of file for conversion>")
-    filename = input("File name for conversion (no extension)>")
-    station_id = input("Station ID>")
-    station_name = input("Station Name>")
-    ports_name = input("PORTS Name>")
+    input_information = {}
+    input_information['directory'] = input("Full directory of file for conversion>")
+    input_information['filename'] = input("File name for conversion (no extension)>")
+    input_information['station_id'] = input("Station ID>")
+    input_information['station_name'] = input("Station Name>")
+    input_information['ports_name'] = input("PORTS Name>")
     while True:
-        dimension = input("[2] 2D sidelooker  or [3] 3D bottom/buoy mount ?")
-        if dimension not in ('2', '3'):
+        input_information['dimension'] = input("[2] 2D sidelooker  or [3] 3D bottom/buoy mount ?")
+        if input_information['dimension'] not in ('2', '3'):
             print('please type 2 or 3')
             continue
         else:
             break
-    if dimension is '3':
-        mag_dec = input("What is the magnetic declination?>")
-        rot_angle = None
-    elif dimension is '2':
-        rot_angle = input("What is the x-axis correction angle?>")
-        mag_dec = None
+    if input_information['dimension'] == '3':
+        input_information['mag_dec'] = int(input("What is the magnetic declination?>"))
+        input_information['rot_angle'] = None
+    elif input_information['dimension'] == '2':
+        input_information['rot_angle'] = int(input("What is the x-axis correction angle?>"))
+        input_information['mag_dec'] = None
 #    awac_wpr_ascii(filename)
-    write_awac_ascii_pufff(directory, filename, station_name, station_id,
-                           ports_name, dimension, mag_dec, rot_angle)
+    write_aquadopp_ascii_pufff(input_information)
 
 
 def aquadopp_conversion():
-    """ converts input aquadopp file"""
-#    directory = input("Full directory of file for conversion>")
+    """ converts input aquadopp file. For now this doesn't really need to be a
+    separate function, but it could be in the future"""
+    directory = input("Full directory of file for conversion>")
 #    filename = input("File name for conversion (no extension)>")
 #    station_id = input("Station ID>")
 #    station_name = input("Station Name>")
@@ -52,15 +53,17 @@ def aquadopp_conversion():
 #            continue
 #        else:
 #            break
-#    if dimension is '3':
-#        mag_dec = input("What is the magnetic declination?>")
-#    elif dimension is '2':
-#        rot_angle = input("What is the x-axis correction angle?>")
-#    aquadopp_wpr_ascii(filename)
+#    if dimension == '3':
+#        mag_dec = int(input("What is the magnetic declination?>"))
+#        rot_angle = None
+#    elif dimension == '2':
+#        rot_angle = int(input("What is the x-axis correction angle?>"))
+#        mag_dec = None
+##    awac_wpr_ascii(filename)
 #    write_aquadopp_ascii_pufff(directory, filename, station_name, station_id,
-#                           ports_name, dimension, mag_dec, rot_angle)
-
-    sys.exit()
+#                               ports_name, dimension, mag_dec, rot_angle)
+#
+#    sys.exit()
 
 
 def signature_conversion():

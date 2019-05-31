@@ -28,6 +28,7 @@ def read_sen(directory, filename):
 
 
 def read_data2D(directory, filename):
+    """ Read current data from 2D awac/aquadopp files"""
     a1_array = np.loadtxt(os.path.join(directory, filename + '.a1'))
     a2_array = np.loadtxt(os.path.join(directory, filename + '.a2'))
     v1_array = np.loadtxt(os.path.join(directory, filename + '.v1'))
@@ -36,6 +37,7 @@ def read_data2D(directory, filename):
 
 
 def read_data3D(directory, filename):
+    """ Read current data from 3D awac/aquadopp files"""
     a1_array = np.loadtxt(os.path.join(directory, filename + '.a1'))
     a2_array = np.loadtxt(os.path.join(directory, filename + '.a2'))
     a3_array = np.loadtxt(os.path.join(directory, filename + '.a3'))

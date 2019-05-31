@@ -5,25 +5,23 @@ Created on Mon May 20 15:49:27 2019
 @author: Laura.Fiorentino
 """
 
-# -*- coding: utf-8 -*-
-"""
-Created on Wed May  8 15:45:50 2019
-
-@author: Laura.Fiorentino
-"""
+import os
 import sys
 import numpy as np
-import os
-from read_ascii_awac_aquadopp import read_header, read_sen, read_data2D, read_data3D
+from adcp_ingestion_code.read_ascii_awac_aquadopp import (read_header,
+                                                          read_sen,
+                                                          read_data2D,
+                                                          read_data3D)
+from adcp_ingestion_code.rotations import rotate_bottom, rotate_sidelooker
 
 
-def write_aquadopp_ascii_pufff(directory, filename, station_name, station_id,
-                               ports_name, dimension, mag_dec, rot_angle):
+def write_aquadopp_ascii_pufff(input_information):
     """ This function writes the pufff file """
 
     # get header data from .hdr
     try:
-        num_cells, num_meas = read_header(directory, filename)
+        num_cells, num_meas = read_header(input_information['directory'],
+                                          input_information['filename'])
     except OSError as ex:
         print(ex)
         sys.exit()
@@ -33,16 +31,18 @@ def write_aquadopp_ascii_pufff(directory, filename, station_name, station_id,
 
     # get data from sen file
     try:
-        header_array = read_sen(directory, filename)
+        header_array = read_sen(input_information['directory'],
+                                input_information['filename'])
     except OSError as ex:
         print(ex)
         sys.exit()
 
     # get data from a1 a2 a3 v1 v2 v3
-    if dimension is '2':
+    if input_information['dimension'] == '2':
         try:
             a1_array, a2_array, v1_array, v2_array = \
-                read_data2D(directory, filename)
+                read_data2D(input_information['directory'],
+                            input_information['filename'])
         except OSError as ex:
             print(ex)
             sys.exit()
@@ -51,25 +51,43 @@ def write_aquadopp_ascii_pufff(directory, filename, station_name, station_id,
     else:
         try:
             a1_array, a2_array, a3_array, v1_array, v2_array, \
-                v3_array = read_data3D(directory, filename)
+                v3_array = read_data3D(input_information['directory'],
+                                       input_information['filename'])
         except OSError as ex:
             print(ex)
             sys.exit()
+    # rotate or add magnetic declination
+    if input_information['dimension'] == '2':
+        try:
+            v1_array_rot, v2_array_rot = rotate_sidelooker(v1_array, v2_array,
+                                                           input_information['rot_angle'])
+        except Exception as ex:
+            print(ex)
+            sys.exit()
+    else:
+        try:
+            v1_array_rot, v2_array_rot = rotate_bottom(v1_array, v2_array,
+                                                       input_information['mag_dec'])
+        except Exception as ex:
+            print(ex)
+            sys.exit()
     # compute other values from data
-    speed_array = np.sqrt(v1_array**2 + v2_array**2)
-    direction_array = np.sqrt(v1_array**2 + v2_array**2)
+    speed_array = np.sqrt(np.power(v1_array_rot, 2) + np.power(v2_array_rot, 2))
+    direction_array = np.sqrt(v1_array_rot**2 + v2_array_rot**2)
     std_beam1_array = np.ones(shape=np.shape(a1_array))*-999
     std_beam2_array = np.ones(shape=np.shape(a1_array))*-999
     std_beam3_array = np.ones(shape=np.shape(a1_array))*-999
-    water_temp_array = np.ones(shape=np.shape(a1_array))*-999
+    water_temp_array = np.ones(shape=np.shape(a1_array))
     DQA_array = np.zeros(shape=np.shape(a1_array))
 
     # write pufff file
-    with open(os.path.join(directory, filename + '.txt'), 'a') as puff_file:
+    with open(os.path.join(input_information['directory'],
+                           input_information['filename'] + '.txt'), 'a') as puff_file:
         for n in range(num_meas):
-            puff_file.write("{}\n".format(ports_name))
+            puff_file.write("{}\n".format(input_information['ports_name']))
             puff_file.write("ZZZ0001 {} - {}\n\n".
-                            format(station_id, station_name))
+                            format(input_information['station_id'],
+                                   input_information['station_name']))
             puff_file.write("{:6.0f} {:6.0f} {:6.0f} {:6.0f} {:6.0f} {:6.0f} "
                             "{:6.0f} {:6.0f} {:6.0f} {:6.0f} {:6.0f} {:10.0f} "
                             "{:10.0f}\n".
@@ -98,9 +116,9 @@ def write_aquadopp_ascii_pufff(directory, filename, station_name, station_id,
                                    DQAC))               # DQCC
             new_array = np.zeros(shape=(num_cells, 14))
             new_array[:, 0] = range(num_cells+1)[1:]
-            new_array[:, 1] = v1_array[n, :]*1000
-            new_array[:, 2] = v2_array[n, :]*1000
-            if dimension is '3':
+            new_array[:, 1] = v1_array_rot[n, :]*1000
+            new_array[:, 2] = v2_array_rot[n, :]*1000
+            if input_information['dimension'] == '3':
                 new_array[:, 3] = v3_array[n, :]*1000
             else:
                 new_array[:, 3] = v3_array[n, :]  # should be -999
@@ -112,7 +130,7 @@ def write_aquadopp_ascii_pufff(directory, filename, station_name, station_id,
             new_array[:, 9] = std_beam1_array[n, :]  # should be -999
             new_array[:, 10] = std_beam2_array[n, :]  # should be -999
             new_array[:, 11] = std_beam3_array[n, :]  # should be -999
-            new_array[:, 12] = water_temp_array[n, :]  # should be -999
+            new_array[:, 12] = water_temp_array[n, :] * header_array[n][14]*100  # should be -999
             new_array[:, 13] = DQA_array[n, :]
             current_format = '%4.0f' + 12*' %6.0f' + ' %032.0f'
             np.savetxt(puff_file, new_array, fmt=current_format)
