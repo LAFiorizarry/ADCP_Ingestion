@@ -77,7 +77,7 @@ def write_nortek_ascii_pufff(station_information, file):
     DQA_array = np.zeros(shape=np.shape(a1_array))
 
     # write pufff file
-    with open(os.path.join(file.directory, file.filename + '.txt'),
+    with open(os.path.join(file.directory, file.filename + '.cu'),
               'a') as puff_file:
         for n in range(num_meas):
             puff_file.write("{}\n".format(station_information['ports_name']))
